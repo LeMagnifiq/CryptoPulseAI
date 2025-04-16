@@ -3,15 +3,28 @@
 <head>
     <title>CryptoPulseAI - Predictions</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
-        p { font-size: 18px; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h1 { color: #333; text-align: center; }
+        .prediction-box { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; }
+        p { font-size: 18px; margin: 10px 0; }
+        .model { font-weight: bold; color: #555; }
+        .prediction-rise { color: green; }
+        .prediction-fall { color: red; }
+        .links { text-align: center; margin-top: 20px; }
+        a { color: #007bff; text-decoration: none; margin: 0 10px; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <h1>Price Prediction</h1>
-    <p>{{ coin }} price (RandomForest): <strong>{{ rf_prediction }}</strong> tomorrow.</p>
-    <p>{{ coin }} price (XGBoost): <strong>{{ xgb_prediction }}</strong> tomorrow.</p>
-    <p><a href="/prices">View Prices</a> | <a href="/">Home</a></p>
+    <h1>Price Predictions</h1>
+    {% for coin, pred in predictions.items() %}
+    <div class="prediction-box">
+        <p><span class="model">{{ coin_map[coin] }} (RandomForest)</span>: Price will <strong class="prediction-{{ pred.rf }}">{{ pred.rf }}</strong> tomorrow.</p>
+        <p><span class="model">{{ coin_map[coin] }} (XGBoost)</span>: Price will <strong class="prediction-{{ pred.xgb }}">{{ pred.xgb }}</strong> tomorrow.</p>
+    </div>
+    {% endfor %}
+    <div class="links">
+        <a href="/prices">View Prices</a> | <a href="/">Home</a>
+    </div>
 </body>
 </html>
