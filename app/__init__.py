@@ -58,7 +58,7 @@ def create_app():
             else:
                 print("Fetching new data")
                 formatted_data = []
-                chart_data = {'rsi': {}, 'volume': {}, 'price': {}, 'macd': {}, 'volatility': {}}
+                chart_data = {'rsi': {}, 'volume': {}, 'price': {}, 'macd': {}}
                 try:
                     time.sleep(4)
                     market_data = client.get_coins_markets(
@@ -74,7 +74,7 @@ def create_app():
                 except Exception as e:
                     print(f"API error in prices: {e}")
                     market_data = [
-                        {'id': coin, 'current_price': 0, 'price_change_percentage_24h': 0}
+                        {'id': coin, 'current_price': 0, 'price_change_percentage_24h': 0, 'market_cap': 0}
                         for coin in coins
                     ]
                 for coin in coins:
@@ -84,14 +84,20 @@ def create_app():
                             'name': coin.capitalize(),
                             'symbol': coin_map[coin],
                             'price': float(coin_info['current_price']),
-                            'change_24h': round(coin_info['price_change_percentage_24h'], 2) if coin_info['price_change_percentage_24h'] is not None else 'N/A'
+                            'change_24h': round(coin_info['price_change_percentage_24h'], 2) if coin_info['price_change_percentage_24h'] is not None else 'N/A',
+                            'market_cap': float(coin_info['market_cap']) if coin_info['market_cap'] else 'N/A',
+                            'volatility': 'N/A',  # Calculated below
+                            'macd': 'N/A'  # Calculated below
                         })
                     else:
                         formatted_data.append({
                             'name': coin.capitalize(),
                             'symbol': coin_map[coin],
                             'price': 'N/A',
-                            'change_24h': 'N/A'
+                            'change_24h': 'N/A',
+                            'market_cap': 'N/A',
+                            'volatility': 'N/A',
+                            'macd': 'N/A'
                         })
                     try:
                         time.sleep(4)
@@ -107,21 +113,29 @@ def create_app():
                         'price': [x[1] for x in history['prices']],
                         'volume': [x[1] for x in history['total_volumes']]
                     })
+                    # RSI
                     delta = df['price'].diff()
                     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
                     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
                     rs = gain / loss
                     df['rsi'] = 100 - (100 / (1 + rs))
+                    # MACD
                     ema12 = df['price'].ewm(span=12, adjust=False).mean()
                     ema26 = df['price'].ewm(span=26, adjust=False).mean()
                     df['macd'] = ema12 - ema26
                     df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+                    df['macd_hist'] = df['macd'] - df['signal']
+                    # Volatility
                     df['volatility'] = df['price'].pct_change().rolling(window=14).std() * 100
+                    # Update formatted_data with latest metrics
+                    for item in formatted_data:
+                        if item['name'].lower() == coin:
+                            item['volatility'] = round(df['volatility'].iloc[-1], 2) if not pd.isna(df['volatility'].iloc[-1]) else 'N/A'
+                            item['macd'] = round(df['macd_hist'].iloc[-1], 2) if not pd.isna(df['macd_hist'].iloc[-1]) else 'N/A'
                     chart_data['rsi'][coin] = df['rsi'].dropna().tolist()[-7:] or [30, 40, 50, 60, 50, 40, 30]
                     chart_data['volume'][coin] = df['volume'].tolist()[-7:] or [1e8] * 7
                     chart_data['price'][coin] = df['price'].tolist()[-7:] or [100] * 7
-                    chart_data['macd'][coin] = df['macd'].dropna().tolist()[-7:] or [0] * 7
-                    chart_data['volatility'][coin] = df['volatility'].dropna().tolist()[-7:] or [1] * 7
+                    chart_data['macd'][coin] = df['macd_hist'].dropna().tolist()[-7:] or [0] * 7
                 cache[cache_key] = formatted_data
                 cache[chart_cache_key] = chart_data
                 save_cache(cache)
