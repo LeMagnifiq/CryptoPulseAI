@@ -59,13 +59,17 @@
         .chart-container {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 25px;
-            margin: 25px 0;
+            padding: 20px;
+            margin: 20px 0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-height: 300px; /* Smaller charts */
+        }
+        canvas {
+            max-height: 250px !important;
         }
         h2 {
-            font-size: 1.8rem;
-            margin-bottom: 20px;
+            font-size: 1.6rem;
+            margin-bottom: 15px;
             color: #00d4ff;
             font-weight: 600;
         }
@@ -87,7 +91,9 @@
             h1 { font-size: 2.2rem; }
             table { font-size: 0.9rem; }
             th, td { padding: 10px; }
-            h2 { font-size: 1.5rem; }
+            h2 { font-size: 1.4rem; }
+            .chart-container { max-height: 250px; }
+            canvas { max-height: 200px !important; }
         }
     </style>
 </head>
@@ -101,6 +107,9 @@
                     <th>Symbol</th>
                     <th>Price (USD)</th>
                     <th>24h Change (%)</th>
+                    <th>Market Cap (USD)</th>
+                    <th>Volatility (%)</th>
+                    <th>MACD</th>
                 </tr>
                 {% for coin in prices %}
                 <tr>
@@ -116,6 +125,15 @@
                     <td class="{% if coin.change_24h != 'N/A' and coin.change_24h >= 0 %}positive{% else %}negative{% endif %}">
                         {{ coin.change_24h }}
                     </td>
+                    <td>
+                        {% if coin.market_cap != 'N/A' and coin.market_cap is number %}
+                            ${{ coin.market_cap | int | float | round(0) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ coin.volatility }}</td>
+                    <td>{{ coin.macd }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -136,6 +154,11 @@
             <canvas id="volumeChart"></canvas>
         </div>
 
+        <div class="chart-container">
+            <h2>MACD (Last 7 Days)</h2>
+            <canvas id="macdChart"></canvas>
+        </div>
+
         <div class="links">
             <a href="/predictions">View Predictions</a> | <a href="/">Home</a>
         </div>
@@ -143,7 +166,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Define actual dates (based on April 16, 2025)
+        // Actual dates (based on April 16, 2025)
         const dates = [
             '2025-04-09', '2025-04-10', '2025-04-11', '2025-04-12',
             '2025-04-13', '2025-04-14', '2025-04-15'
@@ -157,11 +180,11 @@
             'dogecoin': '#ffcc00'
         };
 
-        // Function to create gradient background
-        function createGradient(ctx, chartArea) {
+        // Gradient function
+        function createGradient(ctx, chartArea, color) {
             const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-            gradient.addColorStop(0, 'rgba(0, 212, 255, 0.1)');
-            gradient.addColorStop(1, 'rgba(0, 212, 255, 0.3)');
+            gradient.addColorStop(0, color + '10');
+            gradient.addColorStop(1, color + '30');
             return gradient;
         }
 
@@ -175,11 +198,16 @@
                         label: '{{ coin_map[coin] }}',
                         data: {{ prices | tojson }},
                         borderColor: coinColors['{{ coin }}'],
-                        backgroundColor: coinColors['{{ coin }}'] + '33',
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return;
+                            return createGradient(ctx, chartArea, coinColors['{{ coin }}']);
+                        },
                         fill: true,
                         tension: 0.5,
-                        pointRadius: 5,
-                        pointHoverRadius: 8,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                         pointBackgroundColor: '#ffffff',
                         pointBorderColor: coinColors['{{ coin }}'],
                         pointBorderWidth: 2
@@ -189,19 +217,20 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         labels: {
                             color: '#e0e0e0',
-                            font: { size: 14, weight: '600' }
+                            font: { size: 13, weight: '600' }
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(13, 27, 42, 0.9)',
                         titleColor: '#00d4ff',
                         bodyColor: '#e0e0e0',
-                        titleFont: { size: 14, weight: '600' },
-                        bodyFont: { size: 12 }
+                        titleFont: { size: 13, weight: '600' },
+                        bodyFont: { size: 11 }
                     }
                 },
                 scales: {
@@ -211,9 +240,9 @@
                             display: true,
                             text: 'Price (USD)',
                             color: '#e0e0e0',
-                            font: { size: 16, weight: '600' }
+                            font: { size: 14, weight: '600' }
                         },
-                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
                     },
                     x: {
@@ -221,15 +250,15 @@
                             display: true,
                             text: 'Date',
                             color: '#e0e0e0',
-                            font: { size: 16, weight: '600' }
+                            font: { size: 14, weight: '600' }
                         },
-                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
                     }
                 },
-                animation: { duration: 2000, easing: 'easeInOutQuart' },
+                animation: { duration: 1800, easing: 'easeInOutQuart' },
                 elements: {
-                    line: { borderWidth: 3 },
+                    line: { borderWidth: 2.5 },
                     point: { hoverBorderWidth: 3 }
                 }
             }
@@ -245,11 +274,16 @@
                         label: '{{ coin_map[coin] }}',
                         data: {{ rsi | tojson }},
                         borderColor: coinColors['{{ coin }}'],
-                        backgroundColor: coinColors['{{ coin }}'] + '33',
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return;
+                            return createGradient(ctx, chartArea, coinColors['{{ coin }}']);
+                        },
                         fill: true,
                         tension: 0.5,
-                        pointRadius: 5,
-                        pointHoverRadius: 8,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                         pointBackgroundColor: '#ffffff',
                         pointBorderColor: coinColors['{{ coin }}'],
                         pointBorderWidth: 2
@@ -259,19 +293,20 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         labels: {
                             color: '#e0e0e0',
-                            font: { size: 14, weight: '600' }
+                            font: { size: 13, weight: '600' }
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(13, 27, 42, 0.9)',
                         titleColor: '#00d4ff',
                         bodyColor: '#e0e0e0',
-                        titleFont: { size: 14, weight: '600' },
-                        bodyFont: { size: 12 }
+                        titleFont: { size: 13, weight: '600' },
+                        bodyFont: { size: 11 }
                     }
                 },
                 scales: {
@@ -282,9 +317,9 @@
                             display: true,
                             text: 'RSI',
                             color: '#e0e0e0',
-                            font: { size: 16, weight: '600' }
+                            font: { size: 14, weight: '600' }
                         },
-                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
                     },
                     x: {
@@ -292,15 +327,15 @@
                             display: true,
                             text: 'Date',
                             color: '#e0e0e0',
-                            font: { size: 16, weight: '600' }
+                            font: { size: 14, weight: '600' }
                         },
-                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
                     }
                 },
-                animation: { duration: 2000, easing: 'easeInOutQuart' },
+                animation: { duration: 1800, easing: 'easeInOutQuart' },
                 elements: {
-                    line: { borderWidth: 3 },
+                    line: { borderWidth: 2.5 },
                     point: { hoverBorderWidth: 3 }
                 }
             }
@@ -317,26 +352,27 @@
                         data: {{ volume | tojson }},
                         backgroundColor: coinColors['{{ coin }}'] + '80',
                         borderColor: coinColors['{{ coin }}'],
-                        borderWidth: 2
+                        borderWidth: 1.5
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         labels: {
                             color: '#e0e0e0',
-                            font: { size: 14, weight: '600' }
+                            font: { size: 13, weight: '600' }
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(13, 27, 42, 0.9)',
                         titleColor: '#00d4ff',
                         bodyColor: '#e0e0e0',
-                        titleFont: { size: 14, weight: '600' },
-                        bodyFont: { size: 12 }
+                        titleFont: { size: 13, weight: '600' },
+                        bodyFont: { size: 11 }
                     }
                 },
                 scales: {
@@ -346,9 +382,9 @@
                             display: true,
                             text: 'Volume (USD)',
                             color: '#e0e0e0',
-                            font: { size: 16, weight: '600' }
+                            font: { size: 14, weight: '600' }
                         },
-                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
                     },
                     x: {
@@ -356,13 +392,88 @@
                             display: true,
                             text: 'Date',
                             color: '#e0e0e0',
-                            font: { size: 16, weight: '600' }
+                            font: { size: 14, weight: '600' }
                         },
-                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
                     }
                 },
-                animation: { duration: 2000, easing: 'easeInOutQuart' }
+                animation: { duration: 1800, easing: 'easeInOutQuart' }
+            }
+        });
+
+        new Chart(document.getElementById('macdChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {% for coin, macd in chart_data.macd.items() %}
+                    {
+                        label: '{{ coin_map[coin] }}',
+                        data: {{ macd | tojson }},
+                        borderColor: coinColors['{{ coin }}'],
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return;
+                            return createGradient(ctx, chartArea, coinColors['{{ coin }}']);
+                        },
+                        fill: true,
+                        tension: 0.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: coinColors['{{ coin }}'],
+                        pointBorderWidth: 2
+                    }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0',
+                            font: { size: 13, weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(13, 27, 42, 0.9)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        titleFont: { size: 13, weight: '600' },
+                        bodyFont: { size: 11 }
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'MACD Histogram',
+                            color: '#e0e0e0',
+                            font: { size: 14, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            color: '#e0e0e0',
+                            font: { size: 14, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 11 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                },
+                animation: { duration: 1800, easing: 'easeInOutQuart' },
+                elements: {
+                    line: { borderWidth: 2.5 },
+                    point: { hoverBorderWidth: 3 }
+                }
             }
         });
     </script>
