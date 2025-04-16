@@ -1,8 +1,11 @@
 from flask import Flask, render_template
 from pycoingecko import CoinGeckoAPI
+import pandas as pd
+import joblib
+import numpy as np
 
 def create_app():
-    app = Flask(__name__, template_folder='templates')  # Explicitly set template folder
+    app = Flask(__name__, template_folder='templates')
     client = CoinGeckoAPI()
 
     @app.route('/')
@@ -22,14 +25,13 @@ def create_app():
                 sparkline=False,
                 price_change_percentage='24h'
             )
-            print("API Response:", market_data)
             formatted_data = []
             coin_map = {
                 'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
                 'cardano': 'ADA', 'dogecoin': 'DOGE'
             }
             for coin in coins:
-                coin_info = next((item for item in market_data if item['id'] == coin), None)
+                coin_info = next((item for item in item['id'] == coin), None)
                 if coin_info:
                     formatted_data.append({
                         'name': coin.capitalize(),
@@ -48,5 +50,38 @@ def create_app():
         except Exception as e:
             print(f"Error in prices route: {str(e)}")
             return f"Error in prices route: {str(e)}", 500
+
+    @app.route('/predictions')
+    def predictions():
+        try:
+            model = joblib.load('data/models/bitcoin_rf.pkl')
+            data = client.get_coin_market_chart_by_id(
+                id='bitcoin', vs_currency='usd', days=50, interval='daily'
+            )
+            df = pd.DataFrame({
+                'price': [x[1] for x in data['prices']]
+            })
+            df['sma10'] = df['price'].rolling(window=10).mean()
+            df['sma50'] = df['price'].rolling(window=50).mean()
+            delta = df['price'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss
+            df['rsi'] = 100 - (100 / (1 + rs))
+            ema12 = df['price'].ewm(span=12, adjust=False).mean()
+            ema26 = df['price'].ewm(span=26, adjust=False).mean()
+            df['macd'] = ema12 - ema26
+            df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+            df = df.dropna()
+            features = ['sma10', 'sma50', 'rsi', 'macd', 'signal']
+            X = df[features].iloc[-1:]
+            prediction = model.predict(X)[0]
+            prediction_text = "rise" if prediction == 1 else "fall"
+            return render_template('predictions.html', 
+                                coin='Bitcoin', 
+                                prediction=prediction_text)
+        except Exception as e:
+            print(f"Error in predictions route: {str(e)}")
+            return f"Error in predictions route: {str(e)}", 500
 
     return app
