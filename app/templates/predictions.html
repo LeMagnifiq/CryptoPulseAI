@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptoPulseAI - Predictions</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -23,38 +23,64 @@
         }
         h1 {
             text-align: center;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 30px;
             color: #00d4ff;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            text-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+            font-weight: 700;
         }
-        .prediction-box {
+        .prediction-table {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 20px;
-            margin: 15px 0;
+            overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s;
+            margin-bottom: 40px;
         }
-        .prediction-box:hover {
-            transform: translateY(-5px);
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .model {
+        th, td {
+            padding: 15px;
+            text-align: left;
+            font-size: 1rem;
+        }
+        th {
+            background: rgba(0, 212, 255, 0.1);
             color: #00d4ff;
             font-weight: 600;
         }
-        .prediction-rise {
-            color: #00ff88;
-            font-weight: 600;
-        }
-        .prediction-fall {
-            color: #ff4d4d;
-            font-weight: 600;
-        }
-        p {
-            font-size: 1.2rem;
-            margin: 10px 0;
+        td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-weight: 300;
+        }
+        .rise {
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+        }
+        .fall {
+            color: #ff4d4d;
+            display: flex;
+            align-items: center;
+        }
+        .rise::before, .fall::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-right: 8px;
+            background-size: contain;
+        }
+        .rise::before {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300ff88"><path d="M12 2l10 10H2l10-10z"/></svg>');
+        }
+        .fall::before {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff4d4d"><path d="M12 22L2 12h20l-10 10z"/></svg>');
+        }
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+            transition: background 0.3s;
         }
         .links {
             text-align: center;
@@ -71,20 +97,33 @@
             color: #00ff88;
         }
         @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            p { font-size: 1rem; }
+            h1 { font-size: 2.2rem; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 10px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Price Predictions</h1>
-        {% for coin, pred in predictions.items() %}
-        <div class="prediction-box">
-            <p><span class="model">{{ coin_map[coin] }} (RandomForest)</span>: Price will <strong class="prediction-{{ pred.rf }}">{{ pred.rf }}</strong> tomorrow.</p>
-            <p><span class="model">{{ coin_map[coin] }} (XGBoost)</span>: Price will <strong class="prediction-{{ pred.xgb }}">{{ pred.xgb }}</strong> tomorrow.</p>
+        <div class="prediction-table">
+            <table>
+                <tr>
+                    <th>Coin</th>
+                    <th>Symbol</th>
+                    <th>RandomForest</th>
+                    <th>XGBoost</th>
+                </tr>
+                {% for coin, pred in predictions.items() %}
+                <tr>
+                    <td>{{ coin.capitalize() }}</td>
+                    <td>{{ coin_map[coin] }}</td>
+                    <td class="{{ pred.rf }}">{{ pred.rf.capitalize() }}</td>
+                    <td class="{{ pred.xgb }}">{{ pred.xgb.capitalize() }}</td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
-        {% endfor %}
         <div class="links">
             <a href="/prices">View Prices</a> | <a href="/">Home</a>
         </div>
