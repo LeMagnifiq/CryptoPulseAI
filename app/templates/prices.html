@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptoPulseAI - Prices</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -23,10 +23,11 @@
         }
         h1 {
             text-align: center;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 30px;
             color: #00d4ff;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            text-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+            font-weight: 700;
         }
         .price-table {
             background: rgba(255, 255, 255, 0.05);
@@ -42,6 +43,7 @@
         th, td {
             padding: 15px;
             text-align: left;
+            font-size: 1rem;
         }
         th {
             background: rgba(0, 212, 255, 0.1);
@@ -57,14 +59,15 @@
         .chart-container {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
+            padding: 25px;
+            margin: 25px 0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
         h2 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
             color: #00d4ff;
+            font-weight: 600;
         }
         .links {
             text-align: center;
@@ -81,9 +84,10 @@
             color: #00ff88;
         }
         @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
+            h1 { font-size: 2.2rem; }
             table { font-size: 0.9rem; }
             th, td { padding: 10px; }
+            h2 { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -139,18 +143,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Define actual dates (based on April 16, 2025)
+        const dates = [
+            '2025-04-09', '2025-04-10', '2025-04-11', '2025-04-12',
+            '2025-04-13', '2025-04-14', '2025-04-15'
+        ];
+
         const coinColors = {
-            'bitcoin': '#f7931a',
-            'ethereum': '#627eea',
-            'solana': '#00ffa3',
-            'cardano': '#0033ad',
-            'dogecoin': '#c2a633'
+            'bitcoin': '#ff9500',
+            'ethereum': '#5b7bff',
+            'solana': '#00ffaa',
+            'cardano': '#0047b3',
+            'dogecoin': '#ffcc00'
         };
+
+        // Function to create gradient background
+        function createGradient(ctx, chartArea) {
+            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+            gradient.addColorStop(0, 'rgba(0, 212, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(0, 212, 255, 0.3)');
+            return gradient;
+        }
 
         new Chart(document.getElementById('priceChart').getContext('2d'), {
             type: 'line',
             data: {
-                labels: ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1'],
+                labels: dates,
                 datasets: [
                     {% for coin, prices in chart_data.price.items() %}
                     {
@@ -158,10 +176,13 @@
                         data: {{ prices | tojson }},
                         borderColor: coinColors['{{ coin }}'],
                         backgroundColor: coinColors['{{ coin }}'] + '33',
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        fill: true,
+                        tension: 0.5,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: coinColors['{{ coin }}'],
+                        pointBorderWidth: 2
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
@@ -169,21 +190,55 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { labels: { color: '#e0e0e0', font: { size: 12 } } },
-                    tooltip: { backgroundColor: '#0d1b2a', titleColor: '#00d4ff', bodyColor: '#e0e0e0' }
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0',
+                            font: { size: 14, weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(13, 27, 42, 0.9)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        titleFont: { size: 14, weight: '600' },
+                        bodyFont: { size: 12 }
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: false, title: { display: true, text: 'Price (USD)', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { title: { display: true, text: 'Date', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Price (USD)',
+                            color: '#e0e0e0',
+                            font: { size: 16, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            color: '#e0e0e0',
+                            font: { size: 16, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
                 },
-                animation: { duration: 1500, easing: 'easeInOutQuart' }
+                animation: { duration: 2000, easing: 'easeInOutQuart' },
+                elements: {
+                    line: { borderWidth: 3 },
+                    point: { hoverBorderWidth: 3 }
+                }
             }
         });
 
         new Chart(document.getElementById('rsiChart').getContext('2d'), {
             type: 'line',
             data: {
-                labels: ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1'],
+                labels: dates,
                 datasets: [
                     {% for coin, rsi in chart_data.rsi.items() %}
                     {
@@ -191,10 +246,13 @@
                         data: {{ rsi | tojson }},
                         borderColor: coinColors['{{ coin }}'],
                         backgroundColor: coinColors['{{ coin }}'] + '33',
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        fill: true,
+                        tension: 0.5,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: coinColors['{{ coin }}'],
+                        pointBorderWidth: 2
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
@@ -202,29 +260,64 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { labels: { color: '#e0e0e0', font: { size: 12 } } },
-                    tooltip: { backgroundColor: '#0d1b2a', titleColor: '#00d4ff', bodyColor: '#e0e0e0' }
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0',
+                            font: { size: 14, weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(13, 27, 42, 0.9)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        titleFont: { size: 14, weight: '600' },
+                        bodyFont: { size: 12 }
+                    }
                 },
                 scales: {
-                    y: { min: 0, max: 100, title: { display: true, text: 'RSI', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { title: { display: true, text: 'Date', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    y: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'RSI',
+                            color: '#e0e0e0',
+                            font: { size: 16, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            color: '#e0e0e0',
+                            font: { size: 16, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
                 },
-                animation: { duration: 1500, easing: 'easeInOutQuart' }
+                animation: { duration: 2000, easing: 'easeInOutQuart' },
+                elements: {
+                    line: { borderWidth: 3 },
+                    point: { hoverBorderWidth: 3 }
+                }
             }
         });
 
         new Chart(document.getElementById('volumeChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1'],
+                labels: dates,
                 datasets: [
                     {% for coin, volume in chart_data.volume.items() %}
                     {
                         label: '{{ coin_map[coin] }}',
                         data: {{ volume | tojson }},
-                        backgroundColor: coinColors['{{ coin }}'] + '66',
+                        backgroundColor: coinColors['{{ coin }}'] + '80',
                         borderColor: coinColors['{{ coin }}'],
-                        borderWidth: 1
+                        borderWidth: 2
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
@@ -232,14 +325,44 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { labels: { color: '#e0e0e0', font: { size: 12 } } },
-                    tooltip: { backgroundColor: '#0d1b2a', titleColor: '#00d4ff', bodyColor: '#e0e0e0' }
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0',
+                            font: { size: 14, weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(13, 27, 42, 0.9)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        titleFont: { size: 14, weight: '600' },
+                        bodyFont: { size: 12 }
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Volume (USD)', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { title: { display: true, text: 'Date', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Volume (USD)',
+                            color: '#e0e0e0',
+                            font: { size: 16, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            color: '#e0e0e0',
+                            font: { size: 16, weight: '600' }
+                        },
+                        ticks: { color: '#e0e0e0', font: { size: 12 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
                 },
-                animation: { duration: 1500, easing: 'easeInOutQuart' }
+                animation: { duration: 2000, easing: 'easeInOutQuart' }
             }
         });
     </script>
