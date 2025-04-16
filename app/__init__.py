@@ -11,7 +11,7 @@ def create_app():
     app = Flask(__name__, template_folder='templates')
     client = CoinGeckoAPI()
     cache_file = 'data/cache.pkl'
-    cache_duration = 600  # 10 minutes
+    cache_duration = 900  # 15 minutes
 
     def load_cache():
         if os.path.exists(cache_file):
@@ -55,7 +55,7 @@ def create_app():
                 chart_data = cache[chart_cache_key]
             else:
                 try:
-                    time.sleep(2)
+                    time.sleep(3)
                     market_data = client.get_coins_markets(
                         vs_currency='usd',
                         ids=coins,
@@ -90,7 +90,7 @@ def create_app():
                             'change_24h': 'N/A'
                         })
                     try:
-                        time.sleep(2)
+                        time.sleep(3)
                         history = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=14, interval='daily'
                         )
@@ -134,7 +134,7 @@ def create_app():
                     data = cache[cache_key]
                 else:
                     try:
-                        time.sleep(2)
+                        time.sleep(3)
                         data = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=50, interval='daily'
                         )
