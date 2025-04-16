@@ -54,17 +54,14 @@ def create_app():
     @app.route('/predictions')
     def predictions():
         try:
-            # Load both models
             rf_model = joblib.load('data/models/bitcoin_rf.pkl')
             xgb_model = joblib.load('data/models/bitcoin_xgb.pkl')
-            # Fetch recent data
             data = client.get_coin_market_chart_by_id(
                 id='bitcoin', vs_currency='usd', days=50, interval='daily'
             )
             df = pd.DataFrame({
                 'price': [x[1] for x in data['prices']]
             })
-            # Calculate indicators
             df['sma10'] = df['price'].rolling(window=10).mean()
             df['sma50'] = df['price'].rolling(window=50).mean()
             delta = df['price'].diff()
@@ -77,7 +74,6 @@ def create_app():
             df['macd'] = ema12 - ema26
             df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
             df = df.dropna()
-            # Predict
             features = ['sma10', 'sma50', 'rsi', 'macd', 'signal']
             X = df[features].iloc[-1:]
             rf_pred = rf_model.predict(X)[0]
