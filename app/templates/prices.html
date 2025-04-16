@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CryptoPulseAI - Prices</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        table { border-collapse: collapse; width: 100%; max-width: 600px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .positive { color: green; }
+        .negative { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Crypto Prices</h1>
+    <table>
+        <tr>
+            <th>Coin</th>
+            <th>Symbol</th>
+            <th>Price (USD)</th>
+            <th>24h Change (%)</th>
+        </tr>
+        {% for coin in prices %}
+        <tr>
+            <td>{{ coin.name }}</td>
+            <td>{{ coin.symbol }}</td>
+            <td>{{ coin.price }}</td>
+            <td class="{% if coin.change_24h != 'N/A' and coin.change_24h >= 0 %}positive{% else %}negative{% endif %}">
+                {{ coin.change_24h }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p><a href="/">Back to Home</a></p>
+</body>
+</html>
