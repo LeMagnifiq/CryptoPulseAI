@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptoPulseAI - Prices</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
         body {
-            background: linear-gradient(135deg, #1e1e2f, #2a2a4a);
-            color: #ffffff;
+            background: linear-gradient(135deg, #0d1b2a, #1b263b);
+            color: #e0e0e0;
             padding: 20px;
         }
         .container {
@@ -26,13 +26,13 @@
             font-size: 2.5rem;
             margin-bottom: 30px;
             color: #00d4ff;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
         .price-table {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             margin-bottom: 40px;
         }
         table {
@@ -42,24 +42,24 @@
         th, td {
             padding: 15px;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         th {
-            background: rgba(0, 212, 255, 0.2);
-            font-weight: 600;
+            background: rgba(0, 212, 255, 0.1);
             color: #00d4ff;
+            font-weight: 600;
         }
         td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-weight: 300;
         }
         .positive { color: #00ff88; }
         .negative { color: #ff4d4d; }
         .chart-container {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
+            border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
         h2 {
             font-size: 1.5rem;
@@ -79,7 +79,6 @@
         }
         .links a:hover {
             color: #00ff88;
-            text-decoration: underline;
         }
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
@@ -103,7 +102,7 @@
                 <tr>
                     <td>{{ coin.name }}</td>
                     <td>{{ coin.symbol }}</td>
-                    <td>${{ coin.price | float | format("%.2f") }}</td>
+                    <td>${{ coin.price | float | format("%.2f") if coin.price != 'N/A' else 'N/A' }}</td>
                     <td class="{% if coin.change_24h != 'N/A' and coin.change_24h >= 0 %}positive{% else %}negative{% endif %}">
                         {{ coin.change_24h }}
                     </td>
@@ -142,7 +141,6 @@
             'dogecoin': '#c2a633'
         };
 
-        // Price Chart
         new Chart(document.getElementById('priceChart').getContext('2d'), {
             type: 'line',
             data: {
@@ -156,8 +154,8 @@
                         backgroundColor: coinColors['{{ coin }}'] + '33',
                         fill: false,
                         tension: 0.4,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
@@ -165,18 +163,17 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { labels: { color: '#ffffff' } },
-                    tooltip: { backgroundColor: '#1e1e2f', titleColor: '#00d4ff', bodyColor: '#ffffff' }
+                    legend: { labels: { color: '#e0e0e0', font: { size: 12 } } },
+                    tooltip: { backgroundColor: '#0d1b2a', titleColor: '#00d4ff', bodyColor: '#e0e0e0' }
                 },
                 scales: {
-                    y: { beginAtZero: false, title: { display: true, text: 'Price (USD)', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    x: { title: { display: true, text: 'Date', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    y: { beginAtZero: false, title: { display: true, text: 'Price (USD)', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { title: { display: true, text: 'Date', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 },
                 animation: { duration: 1500, easing: 'easeInOutQuart' }
             }
         });
 
-        // RSI Chart
         new Chart(document.getElementById('rsiChart').getContext('2d'), {
             type: 'line',
             data: {
@@ -190,8 +187,8 @@
                         backgroundColor: coinColors['{{ coin }}'] + '33',
                         fill: false,
                         tension: 0.4,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
@@ -199,18 +196,17 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { labels: { color: '#ffffff' } },
-                    tooltip: { backgroundColor: '#1e1e2f', titleColor: '#00d4ff', bodyColor: '#ffffff' }
+                    legend: { labels: { color: '#e0e0e0', font: { size: 12 } } },
+                    tooltip: { backgroundColor: '#0d1b2a', titleColor: '#00d4ff', bodyColor: '#e0e0e0' }
                 },
                 scales: {
-                    y: { min: 0, max: 100, title: { display: true, text: 'RSI', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    x: { title: { display: true, text: 'Date', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    y: { min: 0, max: 100, title: { display: true, text: 'RSI', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { title: { display: true, text: 'Date', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 },
                 animation: { duration: 1500, easing: 'easeInOutQuart' }
             }
         });
 
-        // Volume Chart
         new Chart(document.getElementById('volumeChart').getContext('2d'), {
             type: 'bar',
             data: {
@@ -220,7 +216,7 @@
                     {
                         label: '{{ coin_map[coin] }}',
                         data: {{ volume | tojson }},
-                        backgroundColor: coinColors['{{ coin }}'] + '99',
+                        backgroundColor: coinColors['{{ coin }}'] + '66',
                         borderColor: coinColors['{{ coin }}'],
                         borderWidth: 1
                     }{% if not loop.last %},{% endif %}
@@ -230,12 +226,12 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { labels: { color: '#ffffff' } },
-                    tooltip: { backgroundColor: '#1e1e2f', titleColor: '#00d4ff', bodyColor: '#ffffff' }
+                    legend: { labels: { color: '#e0e0e0', font: { size: 12 } } },
+                    tooltip: { backgroundColor: '#0d1b2a', titleColor: '#00d4ff', bodyColor: '#e0e0e0' }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Volume (USD)', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    x: { title: { display: true, text: 'Date', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    y: { beginAtZero: true, title: { display: true, text: 'Volume (USD)', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { title: { display: true, text: 'Date', color: '#e0e0e0' }, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 },
                 animation: { duration: 1500, easing: 'easeInOutQuart' }
             }
