@@ -35,10 +35,12 @@ def create_app():
         try:
             cache = load_cache()
             cache_key = 'prices'
-            if cache_key in cache:
+            chart_cache_key = 'chart_data'
+            if cache_key in cache and chart_cache_key in cache:
                 formatted_data = cache[cache_key]
+                chart_data = cache[chart_cache_key]
             else:
-                time.sleep(1)  # Avoid rate limit
+                time.sleep(1)
                 market_data = client.get_coins_markets(
                     vs_currency='usd',
                     ids=coins,
@@ -53,6 +55,7 @@ def create_app():
                     'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
                     'cardano': 'ADA', 'dogecoin': 'DOGE'
                 }
+                chart_data = {'rsi': {}, 'volume': {}, 'price': {}}
                 for coin in coins:
                     coin_info = next((item for item in market_data if item['id'] == coin), None)
                     if coin_info:
@@ -62,16 +65,26 @@ def create_app():
                             'price': coin_info['current_price'],
                             'change_24h': round(coin_info['price_change_percentage_24h'], 2) if coin_info['price_change_percentage_24h'] is not None else 'N/A'
                         })
-                    else:
-                        formatted_data.append({
-                            'name': coin.capitalize(),
-                            'symbol': coin_map[coin],
-                            'price': 'N/A',
-                            'change_24h': 'N/A'
-                        })
+                    time.sleep(1)
+                    history = client.get_coin_market_chart_by_id(
+                        id=coin, vs_currency='usd', days=14, interval='daily'
+                    )
+                    df = pd.DataFrame({
+                        'price': [x[1] for x in history['prices']],
+                        'volume': [x[1] for x in history['total_volumes']]
+                    })
+                    delta = df['price'].diff()
+                    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                    rs = gain / loss
+                    df['rsi'] = 100 - (100 / (1 + rs))
+                    chart_data['rsi'][coin] = df['rsi'].dropna().tolist()[-7:]
+                    chart_data['volume'][coin] = df['volume'].tolist()[-7:]
+                    chart_data['price'][coin] = df['price'].tolist()[-7:]
                 cache[cache_key] = formatted_data
+                cache[chart_cache_key] = chart_data
                 save_cache(cache)
-            return render_template('prices.html', prices=formatted_data)
+            return render_template('prices.html', prices=formatted_data, chart_data=chart_data, coin_map=coin_map)
         except Exception as e:
             print(f"Error in prices route: {str(e)}")
             return f"Error in prices route: {str(e)}", 500
@@ -79,7 +92,7 @@ def create_app():
     @app.route('/predictions')
     def predictions():
         try:
-            coins = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL'}
+            coins = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL', 'cardano': 'ADA'}
             predictions = {}
             cache = load_cache()
             for coin in coins:
@@ -89,7 +102,7 @@ def create_app():
                 if cache_key in cache:
                     data = cache[cache_key]
                 else:
-                    time.sleep(1)  # Avoid rate limit
+                    time.sleep(1)
                     data = client.get_coin_market_chart_by_id(
                         id=coin, vs_currency='usd', days=50, interval='daily'
                     )
