@@ -86,8 +86,8 @@ def create_app():
                             'price': float(coin_info['current_price']),
                             'change_24h': round(coin_info['price_change_percentage_24h'], 2) if coin_info['price_change_percentage_24h'] is not None else 'N/A',
                             'market_cap': float(coin_info['market_cap']) if coin_info['market_cap'] else 'N/A',
-                            'volatility': 'N/A',  # Calculated below
-                            'macd': 'N/A'  # Calculated below
+                            'volatility': 'N/A',
+                            'macd': 'N/A'
                         })
                     else:
                         formatted_data.append({
@@ -113,21 +113,17 @@ def create_app():
                         'price': [x[1] for x in history['prices']],
                         'volume': [x[1] for x in history['total_volumes']]
                     })
-                    # RSI
                     delta = df['price'].diff()
                     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
                     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
                     rs = gain / loss
                     df['rsi'] = 100 - (100 / (1 + rs))
-                    # MACD
                     ema12 = df['price'].ewm(span=12, adjust=False).mean()
                     ema26 = df['price'].ewm(span=26, adjust=False).mean()
                     df['macd'] = ema12 - ema26
                     df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
                     df['macd_hist'] = df['macd'] - df['signal']
-                    # Volatility
                     df['volatility'] = df['price'].pct_change().rolling(window=14).std() * 100
-                    # Update formatted_data with latest metrics
                     for item in formatted_data:
                         if item['name'].lower() == coin:
                             item['volatility'] = round(df['volatility'].iloc[-1], 2) if not pd.isna(df['volatility'].iloc[-1]) else 'N/A'
