@@ -26,7 +26,6 @@ def create_app():
             pickle.dump({'timestamp': time.time(), 'data': data}, f)
 
     def get_mock_data(coin, days=14):
-        # Mock data for fallback
         base_prices = {
             'bitcoin': 80000, 'ethereum': 3000, 'solana': 150,
             'cardano': 0.45, 'dogecoin': 0.15
@@ -43,6 +42,10 @@ def create_app():
     @app.route('/prices')
     def prices():
         coins = ['bitcoin', 'ethereum', 'solana', 'cardano', 'dogecoin']
+        coin_map = {
+            'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
+            'cardano': 'ADA', 'dogecoin': 'DOGE'
+        }
         try:
             cache = load_cache()
             cache_key = 'prices'
@@ -69,10 +72,6 @@ def create_app():
                         for coin in coins
                     ]
                 formatted_data = []
-                coin_map = {
-                    'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
-                    'cardano': 'ADA', 'dogecoin': 'DOGE'
-                }
                 chart_data = {'rsi': {}, 'volume': {}, 'price': {}}
                 for coin in coins:
                     coin_info = next((item for item in market_data if item['id'] == coin), None)
@@ -120,8 +119,11 @@ def create_app():
 
     @app.route('/predictions')
     def predictions():
+        coin_map = {
+            'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL', 'cardano': 'ADA'
+        }
         try:
-            coins = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL', 'cardano': 'ADA'}
+            coins = coin_map.keys()
             predictions = {}
             cache = load_cache()
             for coin in coins:
@@ -166,7 +168,7 @@ def create_app():
                     'rf': 'rise' if rf_pred == 1 else 'fall',
                     'xgb': 'rise' if xgb_pred == 1 else 'fall'
                 }
-            return render_template('predictions.html', predictions=predictions, coin_map=coins)
+            return render_template('predictions.html', predictions=predictions, coin_map=coin_map)
         except Exception as e:
             print(f"Error in predictions route: {str(e)}")
             return render_template('error.html', error=str(e))
