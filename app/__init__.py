@@ -47,15 +47,18 @@ def create_app():
             'cardano': 'ADA', 'dogecoin': 'DOGE'
         }
         try:
+            print("Starting /prices route")
             cache = load_cache()
             cache_key = 'prices'
             chart_cache_key = 'chart_data'
             if cache_key in cache and chart_cache_key in cache:
                 formatted_data = cache[cache_key]
                 chart_data = cache[chart_cache_key]
+                print("Loaded from cache")
             else:
+                print("Fetching new data")
                 formatted_data = []
-                chart_data = {'rsi': {}, 'volume': {}, 'price': {}}
+                chart_data = {'rsi': {}, 'volume': {}, 'price': {}, 'macd': {}, 'volatility': {}}
                 try:
                     time.sleep(4)
                     market_data = client.get_coins_markets(
@@ -67,6 +70,7 @@ def create_app():
                         sparkline=False,
                         price_change_percentage='24h'
                     )
+                    print("Fetched market data")
                 except Exception as e:
                     print(f"API error in prices: {e}")
                     market_data = [
@@ -94,9 +98,11 @@ def create_app():
                         history = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=14, interval='daily'
                         )
+                        print(f"Fetched chart data for {coin}")
                     except Exception as e:
                         print(f"API error for {coin} chart: {e}")
                         history = get_mock_data(coin)
+                        print(f"Using mock data for {coin}")
                     df = pd.DataFrame({
                         'price': [x[1] for x in history['prices']],
                         'volume': [x[1] for x in history['total_volumes']]
@@ -106,12 +112,21 @@ def create_app():
                     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
                     rs = gain / loss
                     df['rsi'] = 100 - (100 / (1 + rs))
+                    ema12 = df['price'].ewm(span=12, adjust=False).mean()
+                    ema26 = df['price'].ewm(span=26, adjust=False).mean()
+                    df['macd'] = ema12 - ema26
+                    df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+                    df['volatility'] = df['price'].pct_change().rolling(window=14).std() * 100
                     chart_data['rsi'][coin] = df['rsi'].dropna().tolist()[-7:] or [30, 40, 50, 60, 50, 40, 30]
                     chart_data['volume'][coin] = df['volume'].tolist()[-7:] or [1e8] * 7
                     chart_data['price'][coin] = df['price'].tolist()[-7:] or [100] * 7
+                    chart_data['macd'][coin] = df['macd'].dropna().tolist()[-7:] or [0] * 7
+                    chart_data['volatility'][coin] = df['volatility'].dropna().tolist()[-7:] or [1] * 7
                 cache[cache_key] = formatted_data
                 cache[chart_cache_key] = chart_data
                 save_cache(cache)
+                print("Saved to cache")
+            print("Rendering prices.html")
             return render_template('prices.html', prices=formatted_data, chart_data=chart_data, coin_map=coin_map)
         except Exception as e:
             print(f"Error in prices route: {str(e)}")
@@ -120,8 +135,8 @@ def create_app():
     @app.route('/predictions')
     def predictions():
         coin_map = {
-            'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL', 'cardano': 'ADA'
-            # 'dogecoin': 'DOGE'  # Uncomment to enable Dogecoin predictions
+            'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
+            'cardano': 'ADA', 'dogecoin': 'DOGE'
         }
         try:
             print("Starting /predictions route")
