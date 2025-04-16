@@ -62,7 +62,7 @@
             padding: 20px;
             margin: 20px 0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            max-height: 300px; /* Smaller charts */
+            max-height: 300px;
         }
         canvas {
             max-height: 250px !important;
@@ -166,7 +166,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Actual dates (based on April 16, 2025)
         const dates = [
             '2025-04-09', '2025-04-10', '2025-04-11', '2025-04-12',
             '2025-04-13', '2025-04-14', '2025-04-15'
@@ -180,7 +179,6 @@
             'dogecoin': '#ffcc00'
         };
 
-        // Gradient function
         function createGradient(ctx, chartArea, color) {
             const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
             gradient.addColorStop(0, color + '10');
