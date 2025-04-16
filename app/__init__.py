@@ -27,7 +27,7 @@ def create_app():
 
     @app.route('/')
     def home():
-        return 'Hello, CryptoPulseAI!'
+        return render_template('home.html')
 
     @app.route('/prices')
     def prices():
@@ -87,7 +87,7 @@ def create_app():
             return render_template('prices.html', prices=formatted_data, chart_data=chart_data, coin_map=coin_map)
         except Exception as e:
             print(f"Error in prices route: {str(e)}")
-            return f"Error in prices route: {str(e)}", 500
+            return render_template('error.html', error=str(e))
 
     @app.route('/predictions')
     def predictions():
@@ -122,8 +122,10 @@ def create_app():
                 ema26 = df['price'].ewm(span=26, adjust=False).mean()
                 df['macd'] = ema12 - ema26
                 df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+                df['volatility'] = df['price'].pct_change().rolling(window=14).std()
+                df['momentum'] = df['price'].diff(4)
                 df = df.dropna()
-                features = ['sma10', 'sma50', 'rsi', 'macd', 'signal']
+                features = ['sma10', 'sma50', 'rsi', 'macd', 'signal', 'volatility', 'momentum']
                 X = df[features].iloc[-1:]
                 rf_pred = rf_model.predict(X)[0]
                 xgb_pred = xgb_model.predict(X)[0]
@@ -134,6 +136,6 @@ def create_app():
             return render_template('predictions.html', predictions=predictions, coin_map=coins)
         except Exception as e:
             print(f"Error in predictions route: {str(e)}")
-            return f"Error in predictions route: {str(e)}", 500
+            return render_template('error.html', error=str(e))
 
     return app
