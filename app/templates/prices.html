@@ -3,13 +3,16 @@
 <head>
     <title>CryptoPulseAI - Prices</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
-        table { border-collapse: collapse; width: 100%; max-width: 600px; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h1 { color: #333; text-align: center; }
+        table { border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px auto; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .positive { color: green; }
         .negative { color: red; }
+        .links { text-align: center; margin-top: 20px; }
+        a { color: #007bff; text-decoration: none; margin: 0 10px; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -32,6 +35,8 @@
         </tr>
         {% endfor %}
     </table>
-    <p><a href="/">Back to Home</a></p>
+    <div class="links">
+        <a href="/predictions">View Predictions</a> | <a href="/">Home</a>
+    </div>
 </body>
 </html>
