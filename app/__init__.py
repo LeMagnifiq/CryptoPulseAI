@@ -11,7 +11,7 @@ def create_app():
     app = Flask(__name__, template_folder='templates')
     client = CoinGeckoAPI()
     cache_file = 'data/cache.pkl'
-    cache_duration = 900  # 15 minutes
+    cache_duration = 1200  # 20 minutes
 
     def load_cache():
         if os.path.exists(cache_file):
@@ -54,8 +54,10 @@ def create_app():
                 formatted_data = cache[cache_key]
                 chart_data = cache[chart_cache_key]
             else:
+                formatted_data = []
+                chart_data = {'rsi': {}, 'volume': {}, 'price': {}}
                 try:
-                    time.sleep(3)
+                    time.sleep(4)
                     market_data = client.get_coins_markets(
                         vs_currency='usd',
                         ids=coins,
@@ -71,15 +73,13 @@ def create_app():
                         {'id': coin, 'current_price': 0, 'price_change_percentage_24h': 0}
                         for coin in coins
                     ]
-                formatted_data = []
-                chart_data = {'rsi': {}, 'volume': {}, 'price': {}}
                 for coin in coins:
                     coin_info = next((item for item in market_data if item['id'] == coin), None)
                     if coin_info and coin_info['current_price'] != 0:
                         formatted_data.append({
                             'name': coin.capitalize(),
                             'symbol': coin_map[coin],
-                            'price': coin_info['current_price'],
+                            'price': float(coin_info['current_price']),
                             'change_24h': round(coin_info['price_change_percentage_24h'], 2) if coin_info['price_change_percentage_24h'] is not None else 'N/A'
                         })
                     else:
@@ -90,7 +90,7 @@ def create_app():
                             'change_24h': 'N/A'
                         })
                     try:
-                        time.sleep(3)
+                        time.sleep(4)
                         history = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=14, interval='daily'
                         )
@@ -134,7 +134,7 @@ def create_app():
                     data = cache[cache_key]
                 else:
                     try:
-                        time.sleep(3)
+                        time.sleep(4)
                         data = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=50, interval='daily'
                         )
