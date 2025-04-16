@@ -47,16 +47,13 @@ def create_app():
             'cardano': 'ADA', 'dogecoin': 'DOGE'
         }
         try:
-            print("Starting /prices route")
             cache = load_cache()
             cache_key = 'prices'
             chart_cache_key = 'chart_data'
             if cache_key in cache and chart_cache_key in cache:
                 formatted_data = cache[cache_key]
                 chart_data = cache[chart_cache_key]
-                print("Loaded from cache")
             else:
-                print("Fetching new data")
                 formatted_data = []
                 chart_data = {'rsi': {}, 'volume': {}, 'price': {}}
                 try:
@@ -70,7 +67,6 @@ def create_app():
                         sparkline=False,
                         price_change_percentage='24h'
                     )
-                    print("Fetched market data")
                 except Exception as e:
                     print(f"API error in prices: {e}")
                     market_data = [
@@ -98,11 +94,9 @@ def create_app():
                         history = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=14, interval='daily'
                         )
-                        print(f"Fetched chart data for {coin}")
                     except Exception as e:
                         print(f"API error for {coin} chart: {e}")
                         history = get_mock_data(coin)
-                        print(f"Using mock data for {coin}")
                     df = pd.DataFrame({
                         'price': [x[1] for x in history['prices']],
                         'volume': [x[1] for x in history['total_volumes']]
@@ -118,8 +112,6 @@ def create_app():
                 cache[cache_key] = formatted_data
                 cache[chart_cache_key] = chart_data
                 save_cache(cache)
-                print("Saved to cache")
-            print("Rendering prices.html")
             return render_template('prices.html', prices=formatted_data, chart_data=chart_data, coin_map=coin_map)
         except Exception as e:
             print(f"Error in prices route: {str(e)}")
@@ -129,26 +121,37 @@ def create_app():
     def predictions():
         coin_map = {
             'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL', 'cardano': 'ADA'
+            # 'dogecoin': 'DOGE'  # Uncomment to enable Dogecoin predictions
         }
         try:
+            print("Starting /predictions route")
             coins = coin_map.keys()
             predictions = {}
             cache = load_cache()
             for coin in coins:
-                rf_model = joblib.load(f'data/models/{coin}_rf.pkl')
-                xgb_model = joblib.load(f'data/models/{coin}_xgb.pkl')
+                print(f"Processing {coin}")
+                try:
+                    rf_model = joblib.load(f'data/models/{coin}_rf.pkl')
+                    xgb_model = joblib.load(f'data/models/{coin}_xgb.pkl')
+                    print(f"Loaded models for {coin}")
+                except Exception as e:
+                    print(f"Error loading models for {coin}: {e}")
+                    continue
                 cache_key = f'{coin}_market_data'
                 if cache_key in cache:
                     data = cache[cache_key]
+                    print(f"Loaded cached data for {coin}")
                 else:
                     try:
                         time.sleep(4)
                         data = client.get_coin_market_chart_by_id(
                             id=coin, vs_currency='usd', days=50, interval='daily'
                         )
+                        print(f"Fetched API data for {coin}")
                     except Exception as e:
                         print(f"API error for {coin} prediction: {e}")
                         data = get_mock_data(coin, days=50)
+                        print(f"Using mock data for {coin}")
                     cache[cache_key] = data
                     save_cache(cache)
                 df = pd.DataFrame({
@@ -176,6 +179,8 @@ def create_app():
                     'rf': 'rise' if rf_pred == 1 else 'fall',
                     'xgb': 'rise' if xgb_pred == 1 else 'fall'
                 }
+                print(f"Generated predictions for {coin}: RF={predictions[coin]['rf']}, XGB={predictions[coin]['xgb']}")
+            print("Rendering predictions.html")
             return render_template('predictions.html', predictions=predictions, coin_map=coin_map)
         except Exception as e:
             print(f"Error in predictions route: {str(e)}")
