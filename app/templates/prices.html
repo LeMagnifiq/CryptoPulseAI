@@ -1,55 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptoPulseAI - Prices</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
-        h1, h2 { color: #333; text-align: center; }
-        table { border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px auto; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .positive { color: green; }
-        .negative { color: red; }
-        .chart-container { max-width: 800px; margin: 20px auto; padding: 10px; }
-        .links { text-align: center; margin-top: 20px; }
-        a { color: #007bff; text-decoration: none; margin: 0 10px; }
-        a:hover { text-decoration: underline; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #2a2a4a);
+            color: #ffffff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        .price-table {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin-bottom: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        th {
+            background: rgba(0, 212, 255, 0.2);
+            font-weight: 600;
+            color: #00d4ff;
+        }
+        td {
+            font-weight: 300;
+        }
+        .positive { color: #00ff88; }
+        .negative { color: #ff4d4d; }
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+        .links {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .links a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 400;
+            margin: 0 15px;
+            transition: color 0.3s;
+        }
+        .links a:hover {
+            color: #00ff88;
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 10px; }
+        }
     </style>
 </head>
 <body>
-    <h1>Crypto Prices</h1>
-    <table>
-        <tr>
-            <th>Coin</th>
-            <th>Symbol</th>
-            <th>Price (USD)</th>
-            <th>24h Change (%)</th>
-        </tr>
-        {% for coin in prices %}
-        <tr>
-            <td>{{ coin.name }}</td>
-            <td>{{ coin.symbol }}</td>
-            <td>{{ coin.price }}</td>
-            <td class="{% if coin.change_24h != 'N/A' and coin.change_24h >= 0 %}positive{% else %}negative{% endif %}">
-                {{ coin.change_24h }}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="container">
+        <h1>Crypto Prices</h1>
+        <div class="price-table">
+            <table>
+                <tr>
+                    <th>Coin</th>
+                    <th>Symbol</th>
+                    <th>Price (USD)</th>
+                    <th>24h Change (%)</th>
+                </tr>
+                {% for coin in prices %}
+                <tr>
+                    <td>{{ coin.name }}</td>
+                    <td>{{ coin.symbol }}</td>
+                    <td>${{ coin.price | float | format("%.2f") }}</td>
+                    <td class="{% if coin.change_24h != 'N/A' and coin.change_24h >= 0 %}positive{% else %}negative{% endif %}">
+                        {{ coin.change_24h }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
 
-    <h2>Price Trends (Last 7 Days)</h2>
-    <div class="chart-container">
-        <canvas id="priceChart"></canvas>
-    </div>
+        <div class="chart-container">
+            <h2>Price Trends (Last 7 Days)</h2>
+            <canvas id="priceChart"></canvas>
+        </div>
 
-    <h2>RSI (Last 7 Days)</h2>
-    <div class="chart-container">
-        <canvas id="rsiChart"></canvas>
-    </div>
+        <div class="chart-container">
+            <h2>RSI (Last 7 Days)</h2>
+            <canvas id="rsiChart"></canvas>
+        </div>
 
-    <h2>Volume (Last 7 Days)</h2>
-    <div class="chart-container">
-        <canvas id="volumeChart"></canvas>
+        <div class="chart-container">
+            <h2>Volume (Last 7 Days)</h2>
+            <canvas id="volumeChart"></canvas>
+        </div>
+
+        <div class="links">
+            <a href="/predictions">View Predictions</a> | <a href="/">Home</a>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -63,8 +143,7 @@
         };
 
         // Price Chart
-        const priceCtx = document.getElementById('priceChart').getContext('2d');
-        new Chart(priceCtx, {
+        new Chart(document.getElementById('priceChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1'],
@@ -74,22 +153,31 @@
                         label: '{{ coin_map[coin] }}',
                         data: {{ prices | tojson }},
                         borderColor: coinColors['{{ coin }}'],
-                        fill: false
+                        backgroundColor: coinColors['{{ coin }}'] + '33',
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
             },
             options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#ffffff' } },
+                    tooltip: { backgroundColor: '#1e1e2f', titleColor: '#00d4ff', bodyColor: '#ffffff' }
+                },
                 scales: {
-                    y: { beginAtZero: false, title: { display: true, text: 'Price (USD)' } },
-                    x: { title: { display: true, text: 'Date' } }
-                }
+                    y: { beginAtZero: false, title: { display: true, text: 'Price (USD)', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { title: { display: true, text: 'Date', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                },
+                animation: { duration: 1500, easing: 'easeInOutQuart' }
             }
         });
 
         // RSI Chart
-        const rsiCtx = document.getElementById('rsiChart').getContext('2d');
-        new Chart(rsiCtx, {
+        new Chart(document.getElementById('rsiChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1'],
@@ -99,22 +187,31 @@
                         label: '{{ coin_map[coin] }}',
                         data: {{ rsi | tojson }},
                         borderColor: coinColors['{{ coin }}'],
-                        fill: false
+                        backgroundColor: coinColors['{{ coin }}'] + '33',
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
             },
             options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#ffffff' } },
+                    tooltip: { backgroundColor: '#1e1e2f', titleColor: '#00d4ff', bodyColor: '#ffffff' }
+                },
                 scales: {
-                    y: { beginAtZero: false, title: { display: true, text: 'RSI' } },
-                    x: { title: { display: true, text: 'Date' } }
-                }
+                    y: { min: 0, max: 100, title: { display: true, text: 'RSI', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { title: { display: true, text: 'Date', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                },
+                animation: { duration: 1500, easing: 'easeInOutQuart' }
             }
         });
 
         // Volume Chart
-        const volumeCtx = document.getElementById('volumeChart').getContext('2d');
-        new Chart(volumeCtx, {
+        new Chart(document.getElementById('volumeChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1'],
@@ -123,22 +220,26 @@
                     {
                         label: '{{ coin_map[coin] }}',
                         data: {{ volume | tojson }},
-                        backgroundColor: coinColors['{{ coin }}'],
+                        backgroundColor: coinColors['{{ coin }}'] + '99',
+                        borderColor: coinColors['{{ coin }}'],
+                        borderWidth: 1
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ]
             },
             options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#ffffff' } },
+                    tooltip: { backgroundColor: '#1e1e2f', titleColor: '#00d4ff', bodyColor: '#ffffff' }
+                },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Volume (USD)' } },
-                    x: { title: { display: true, text: 'Date' } }
-                }
+                    y: { beginAtZero: true, title: { display: true, text: 'Volume (USD)', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { title: { display: true, text: 'Date', color: '#ffffff' }, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                },
+                animation: { duration: 1500, easing: 'easeInOutQuart' }
             }
         });
     </script>
-
-    <div class="links">
-        <a href="/predictions">View Predictions</a> | <a href="/">Home</a>
-    </div>
 </body>
 </html>
