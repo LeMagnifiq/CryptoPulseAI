@@ -10,7 +10,8 @@
 </head>
 <body>
     <h1>Price Prediction</h1>
-    <p>{{ coin }} price is predicted to <strong>{{ prediction }}</strong> tomorrow.</p>
+    <p>{{ coin }} price (RandomForest): <strong>{{ rf_prediction }}</strong> tomorrow.</p>
+    <p>{{ coin }} price (XGBoost): <strong>{{ xgb_prediction }}</strong> tomorrow.</p>
     <p><a href="/prices">View Prices</a> | <a href="/">Home</a></p>
 </body>
 </html>
