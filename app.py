@@ -23,9 +23,7 @@ def format_number(value):
     try:
         return "{:,.2f}".format(float(value))
     except (ValueError, TypeError):
-        return value  # Return as-is if not a number
-
-# Register the filter with Jinja2
+        return value
 app.jinja_env.filters['format_number'] = format_number
 
 # Cache for coin data
@@ -172,4 +170,30 @@ def health():
     return jsonify({"status": "healthy"}), 200
 
 if __name__ == '__main__':
+    # For local development, run with Flask
     app.run(debug=True)
+else:
+    # For Render, configure gunicorn
+    import gunicorn.app.base
+
+    class StandaloneApplication(gunicorn.app.base.BaseApplication):
+        def __init__(self, app, options=None):
+            self.options = options or {}
+            self.application = app
+            super().__init__()
+
+        def load_config(self):
+            for key, value in self.options.items():
+                self.cfg.set(key.lower(), value)
+
+        def load(self):
+            return self.application
+
+    # Gunicorn options: increase timeout to 120 seconds
+    options = {
+        'bind': '0.0.0.0:10000',
+        'workers': 4,
+        'timeout': 120,  # Increase timeout for model loading
+        'loglevel': 'debug',
+    }
+    StandaloneApplication(app, options).run()
