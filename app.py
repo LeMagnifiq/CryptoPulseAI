@@ -10,6 +10,7 @@ from requests.exceptions import HTTPError
 from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
 import time
+import random
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -64,23 +65,33 @@ def fetch_market_data():
         logger.error(f"Error fetching market data: {e}")
         return {}
 
-def fetch_historical_data(coin_id, days=90):
+def fetch_historical_data(coin_id, days=90, retries=3, backoff=2):
     cache_key = f"{coin_id}_historical_{days}"
     if cache_key in CACHE and time.time() - CACHE[cache_key]["timestamp"] < CACHE_TIMEOUT:
         return CACHE[cache_key]["data"]
-    try:
-        response = requests.get(f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart?vs_currency=usd&days={days}", timeout=10)
-        response.raise_for_status()
-        prices = response.json().get('prices', [])
-        daily_data = [prices[i][1] for i in range(0, len(prices), 24) if i < len(prices)]
-        CACHE[cache_key] = {"data": daily_data, "timestamp": time.time()}
-        return daily_data
-    except HTTPError as e:
-        logger.error(f"HTTP error fetching historical data for {coin_id}: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Error fetching historical data for {coin_id}: {e}")
-        return []
+    for attempt in range(retries):
+        try:
+            response = requests.get(f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart?vs_currency=usd&days={days}", timeout=10)
+            response.raise_for_status()
+            prices = response.json().get('prices', [])
+            daily_data = [prices[i][1] for i in range(0, len(prices), 24) if i < len(prices)]
+            CACHE[cache_key] = {"data": daily_data, "timestamp": time.time()}
+            return daily_data
+        except HTTPError as e:
+            if response.status_code == 429:
+                logger.warning(f"Rate limit hit for {coin_id}, attempt {attempt + 1}/{retries}")
+                if attempt < retries - 1:
+                    sleep_time = backoff * (2 ** attempt) + random.uniform(0, 0.1)
+                    logger.debug(f"Backing off for {sleep_time:.2f} seconds")
+                    time.sleep(sleep_time)
+                    continue
+            logger.error(f"HTTP error fetching historical data for {coin_id}: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Error fetching historical data for {coin_id}: {e}")
+            return []
+    logger.error(f"Failed to fetch historical data for {coin_id} after {retries} attempts")
+    return []
 
 def calculate_trends(predictions, threshold=0.003):
     trends = []
@@ -142,7 +153,12 @@ def prices():
     coins = fetch_coins()
     market_data = fetch_market_data()
     total_market_cap_change_24h = market_data.get('data', {}).get('market_cap_change_percentage_24h_usd', 0.0)
-    return render_template('prices.html', coins=coins, total_market_cap_change_24h=total_market_cap_change_24h)
+    # Prepare chart_data for prices.html
+    chart_data = {
+        'labels': [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)][::-1],
+        'market_caps': [market_data.get('data', {}).get('total_market_cap', {}).get('usd', 0)] * 7,  # Placeholder, adjust if API provides historical data
+    }
+    return render_template('prices.html', coins=coins, total_market_cap_change_24h=total_market_cap_change_24h, chart_data=chart_data)
 
 @app.route('/predictions')
 def predictions():
