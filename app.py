@@ -11,7 +11,68 @@ from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
 import time
 
-# ... (other imports and code remain unchanged)
+# Initialize Flask app
+app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Cache for coin data
+CACHE = {}
+CACHE_TIMEOUT = 600  # 10 minutes
+
+def fetch_coins():
+    try:
+        response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1", timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except HTTPError as e:
+        logger.error(f"HTTP error fetching coins: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error fetching coins: {e}")
+        return []
+
+def fetch_historical_data(coin_id, days=90):
+    cache_key = f"{coin_id}_historical_{days}"
+    if cache_key in CACHE and time.time() - CACHE[cache_key]["timestamp"] < CACHE_TIMEOUT:
+        return CACHE[cache_key]["data"]
+    try:
+        response = requests.get(f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart?vs_currency=usd&days={days}", timeout=10)
+        response.raise_for_status()
+        prices = response.json().get('prices', [])
+        daily_data = [prices[i][1] for i in range(0, len(prices), 24) if i < len(prices)]
+        CACHE[cache_key] = {"data": daily_data, "timestamp": time.time()}
+        return daily_data
+    except HTTPError as e:
+        logger.error(f"HTTP error fetching historical data for {coin_id}: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error fetching historical data for {coin_id}: {e}")
+        return []
+
+def calculate_trends(predictions, threshold=0.003):
+    trends = []
+    for i in range(len(predictions)):
+        if i == 0:
+            trends.append('—')
+        else:
+            change = (predictions[i] - predictions[i-1]) / predictions[i-1]
+            if change > threshold:
+                trends.append('▲')
+            elif change < -threshold:
+                trends.append('▼')
+            else:
+                trends.append('—')
+    return trends
+
+def calculate_analysis(predictions):
+    if len(predictions) < 2:
+        return {"seven_day_change": None, "recommendation": "Hold"}
+    seven_day_change = ((predictions[-1] - predictions[0]) / predictions[0]) * 100
+    recommendation = "Buy" if seven_day_change > 5 else "Sell" if seven_day_change < -5 else "Hold"
+    return {"seven_day_change": round(seven_day_change, 2), "recommendation": recommendation}
 
 def predict_future_prices(historical_data, days=7, time_steps=60):
     if len(historical_data) < time_steps:
@@ -40,6 +101,16 @@ def predict_future_prices(historical_data, days=7, time_steps=60):
         current_sequence[-1] = next_pred
     predictions = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
     return predictions.flatten()
+
+@app.route('/')
+def index():
+    coins = fetch_coins()
+    return render_template('index.html', coins=coins)
+
+@app.route('/prices')
+def prices():
+    coins = fetch_coins()
+    return render_template('prices.html', coins=coins)
 
 @app.route('/predictions')
 def predictions():
@@ -85,3 +156,10 @@ def predictions():
         })
     logger.debug(f"Prediction data: {prediction_data}")
     return render_template('predictions.html', prediction_data=prediction_data)
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy"}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
