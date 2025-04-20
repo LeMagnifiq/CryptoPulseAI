@@ -26,21 +26,43 @@ def format_number(value):
         return value
 app.jinja_env.filters['format_number'] = format_number
 
-# Cache for coin data
+# Cache for coin and market data
 CACHE = {}
 CACHE_TIMEOUT = 600  # 10 minutes
 
 def fetch_coins():
+    cache_key = "coins_markets"
+    if cache_key in CACHE and time.time() - CACHE[cache_key]["timestamp"] < CACHE_TIMEOUT:
+        return CACHE[cache_key]["data"]
     try:
         response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1", timeout=10)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        CACHE[cache_key] = {"data": data, "timestamp": time.time()}
+        return data
     except HTTPError as e:
         logger.error(f"HTTP error fetching coins: {e}")
         return []
     except Exception as e:
         logger.error(f"Error fetching coins: {e}")
         return []
+
+def fetch_market_data():
+    cache_key = "global_market"
+    if cache_key in CACHE and time.time() - CACHE[cache_key]["timestamp"] < CACHE_TIMEOUT:
+        return CACHE[cache_key]["data"]
+    try:
+        response = requests.get("https://api.coingecko.com/api/v3/global", timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        CACHE[cache_key] = {"data": data, "timestamp": time.time()}
+        return data
+    except HTTPError as e:
+        logger.error(f"HTTP error fetching market data: {e}")
+        return {}
+    except Exception as e:
+        logger.error(f"Error fetching market data: {e}")
+        return {}
 
 def fetch_historical_data(coin_id, days=90):
     cache_key = f"{coin_id}_historical_{days}"
@@ -118,7 +140,9 @@ def index():
 @app.route('/prices')
 def prices():
     coins = fetch_coins()
-    return render_template('prices.html', coins=coins)
+    market_data = fetch_market_data()
+    total_market_cap_change_24h = market_data.get('data', {}).get('market_cap_change_percentage_24h_usd', 0.0)
+    return render_template('prices.html', coins=coins, total_market_cap_change_24h=total_market_cap_change_24h)
 
 @app.route('/predictions')
 def predictions():
@@ -193,7 +217,7 @@ else:
     options = {
         'bind': '0.0.0.0:10000',
         'workers': 4,
-        'timeout': 120,  # Increase timeout for model loading
+        'timeout': 120,
         'loglevel': 'debug',
     }
     StandaloneApplication(app, options).run()
