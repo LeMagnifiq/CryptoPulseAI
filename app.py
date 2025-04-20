@@ -18,6 +18,16 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Define format_number filter
+def format_number(value):
+    try:
+        return "{:,.2f}".format(float(value))
+    except (ValueError, TypeError):
+        return value  # Return as-is if not a number
+
+# Register the filter with Jinja2
+app.jinja_env.filters['format_number'] = format_number
+
 # Cache for coin data
 CACHE = {}
 CACHE_TIMEOUT = 600  # 10 minutes
