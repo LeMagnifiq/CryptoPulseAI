@@ -18,82 +18,89 @@
         </div>
     </header>
     <main class="container mx-auto px-4 py-6">
-        <div class="mb-6">
-            <h2 class="text-xl font-bold mb-4">7-Day Price Predictions</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full bg-gray-800 rounded-lg text-sm">
-                    <thead>
-                        <tr class="bg-gray-700">
-                            <th class="py-2 px-3 text-left">Coin</th>
-                            {% for date in prediction_data.dates %}
-                                <th class="py-2 px-3 text-right">{{ date }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for coin in prediction_data.coins %}
-                        <tr class="border-t border-gray-700">
-                            <td class="py-2 px-3">
-                                <button class="text-blue-300 hover:text-blue-100" onclick="showCoinChart('{{ coin.name }}')">{{ coin.symbol }}</button>
-                            </td>
-                            {% for i in range(coin.predictions|length) %}
-                            <td class="py-2 px-3 text-right">
-                                ${{ coin.predictions[i] | format_number }}
-                                <span class="{% if coin.trends[i] == '▲' %}text-green-400{% elif coin.trends[i] == '▼' %}text-red-400{% else %}text-gray-400{% endif %}">
-                                    {{ coin.trends[i] }}
-                                </span>
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        {% if prediction_data.error %}
+            <div class="bg-gray-700 border-l-4 border-red-400 text-red-400 p-4 mb-6 rounded-lg">
+                <p class="font-bold">Error</p>
+                <p>{{ prediction_data.error }}</p>
             </div>
-        </div>
-        <div class="mb-6">
-            <h2 class="text-xl font-bold mb-4">Analysis & Recommendations</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full bg-gray-800 rounded-lg text-sm">
-                    <thead>
-                        <tr class="bg-gray-700">
-                            <th class="py-2 px-3 text-left">Coin</th>
-                            <th class="py-2 px-3 text-right">7-Day Change (%)</th>
-                            <th class="py-2 px-3 text-right">Recommendation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for coin in prediction_data.coins %}
-                        <tr class="border-t border-gray-700">
-                            <td class="py-2 px-3">{{ coin.symbol }}</td>
-                            <td class="py-2 px-3 text-right">
-                                {% if coin.analysis.seven_day_change is not none %}
-                                    {{ coin.analysis.seven_day_change | round(2) }}%
-                                    {% if coin.analysis.seven_day_change > 0 %}
-                                        <span class="text-green-400">▲</span>
-                                    {% elif coin.analysis.seven_day_change < 0 %}
-                                        <span class="text-red-400">▼</span>
-                                    {% else %}
-                                        <span class="text-gray-400">—</span>
-                                    {% endif %}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td class="py-2 px-3 text-right">{{ coin.analysis.recommendation }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <section class="mt-6">
-            <h2 class="text-xl font-bold mb-4">Price Forecast</h2>
-            <div class="overflow-x-auto">
-                <div class="bg-gray-800 p-3 rounded-lg w-full" style="max-height: 700px;">
-                    <canvas id="priceChart"></canvas>
+        {% else %}
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-4">7-Day Price Predictions</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-gray-800 rounded-lg text-sm">
+                        <thead>
+                            <tr class="bg-gray-700">
+                                <th class="py-2 px-3 text-left">Coin</th>
+                                {% for date in prediction_data.dates %}
+                                    <th class="py-2 px-3 text-right">{{ date }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for coin in prediction_data.coins %}
+                            <tr class="border-t border-gray-700">
+                                <td class="py-2 px-3">
+                                    <button class="text-blue-300 hover:text-blue-100" onclick="showCoinChart('{{ coin.name }}')">{{ coin.symbol }}</button>
+                                </td>
+                                {% for i in range(coin.predictions|length) %}
+                                <td class="py-2 px-3 text-right">
+                                    ${{ coin.predictions[i] | format_number }}
+                                    <span class="{% if coin.trends[i] == '▲' %}text-green-400{% elif coin.trends[i] == '▼' %}text-red-400{% else %}text-gray-400{% endif %}">
+                                        {{ coin.trends[i] }}
+                                    </span>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </section>
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-4">Analysis & Recommendations</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-gray-800 rounded-lg text-sm">
+                        <thead>
+                            <tr class="bg-gray-700">
+                                <th class="py-2 px-3 text-left">Coin</th>
+                                <th class="py-2 px-3 text-right">7-Day Change (%)</th>
+                                <th class="py-2 px-3 text-right">Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for coin in prediction_data.coins %}
+                            <tr class="border-t border-gray-700">
+                                <td class="py-2 px-3">{{ coin.symbol }}</td>
+                                <td class="py-2 px-3 text-right">
+                                    {% if coin.analysis.seven_day_change is not none %}
+                                        {{ coin.analysis.seven_day_change | round(2) }}%
+                                        {% if coin.analysis.seven_day_change > 0 %}
+                                            <span class="text-green-400">▲</span>
+                                        {% elif coin.analysis.seven_day_change < 0 %}
+                                            <span class="text-red-400">▼</span>
+                                        {% else %}
+                                            <span class="text-gray-400">—</span>
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td class="py-2 px-3 text-right">{{ coin.analysis.recommendation }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <section class="mt-6">
+                <h2 class="text-xl font-bold mb-4">Price Forecast</h2>
+                <div class="overflow-x-auto">
+                    <div class="bg-gray-800 p-3 rounded-lg w-full" style="max-height: 700px;">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
     </main>
     <footer class="bg-gray-800 py-4 text-center">
         <p class="text-gray-400">© 2025 CryptoPulseAI. All rights reserved.</p>
