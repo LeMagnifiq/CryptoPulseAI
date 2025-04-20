@@ -8,7 +8,6 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras import Input
-import argparse
 from sklearn.metrics import mean_absolute_error
 import time
 from requests.exceptions import HTTPError
@@ -312,7 +311,4 @@ app.jinja_env.filters['format_number'] = format_number
 app.jinja_env.filters['format_market_cap'] = format_market_cap
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run Flask app with specified port')
-    parser.add_argument('--port', type=int, default=5000, help='Port to run the Flask app')
-    args = parser.parse_args()
-    app.run(debug=True, port=args.port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

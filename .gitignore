@@ -1,14 +1,9 @@
-# Python virtual environment
 venv/
 __pycache__/
 *.pyc
-# Cache directory
 cache/
-# IDE files
 .vscode/
-# Mac system files
 .DS_Store
-# Backup files
 *.backup*
 app_backup_*.py
 templates/*_backup_*.html
