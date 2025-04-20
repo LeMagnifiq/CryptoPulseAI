@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoPulseAI - Prices</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <header class="bg-gray-800 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Crypto Prices</h1>
+            <nav>
+                <a href="/predictions" class="text-blue-300 hover:text-blue-100 mx-2">Predictions</a>
+                <a href="/" class="text-blue-300 hover:text-blue-100 mx-2">Home</a>
+            </nav>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 py-6">
+        <div class="mb-6">
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="text-lg font-semibold">Total Market Cap</h3>
+                <p class="text-xl">
+                    {{ total_market_cap_formatted }}
+                    {% if total_market_cap_change_24h > 0 %}
+                        <span class="text-green-400">▲ {{ total_market_cap_change_24h | round(2) }}%</span>
+                    {% elif total_market_cap_change_24h < 0 %}
+                        <span class="text-red-400">▼ {{ total_market_cap_change_24h | abs | round(2) }}%</span>
+                    {% else %}
+                        <span class="text-gray-400">— 0.00%</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="overflow-x-auto mb-6">
+            <table class="w-full bg-gray-800 rounded-lg text-sm">
+                <thead>
+                    <tr class="bg-gray-700">
+                        <th class="py-2 px-3 text-left">Coin</th>
+                        <th class="py-2 px-3 text-left">Market Cap</th>
+                        <th class="py-2 px-3 text-left">Price</th>
+                        <th class="py-2 px-3 text-left">24h %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coin in coins %}
+                    <tr class="border-t border-gray-700">
+                        <td class="py-2 px-3">
+                            <button class="text-blue-300 hover:text-blue-100" onclick="showCoinCharts('{{ coin.name }}')">{{ coin.symbol }}</button>
+                        </td>
+                        <td class="py-2 px-3">${{ coin.market_cap_formatted | replace('$', '') }}</td>
+                        <td class="py-2 px-3">${{ coin.current_price | format_number }}</td>
+                        <td class="py-2 px-3">
+                            {% if coin.price_change_percentage_24h > 0 %}
+                                <span class="text-green-400">▲ {{ coin.price_change_percentage_24h | round(2) }}%</span>
+                            {% elif coin.price_change_percentage_24h < 0 %}
+                                <span class="text-red-400">▼ {{ coin.price_change_percentage_24h | abs | round(2) }}%</span>
+                            {% else %}
+                                <span class="text-gray-400">— 0.00%</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <section class="mt-6">
+            <h2 class="text-xl font-bold mb-4">Market Trends</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-800 p-3 rounded-lg" style="max-height: 700px;">
+                    <canvas id="priceChart"></canvas>
+                </div>
+                <div class="bg-gray-800 p-3 rounded-lg" style="max-height: 700px;">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+                <div class="bg-gray-800 p-3 rounded-lg" style="max-height: 700px;">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="bg-gray-800 py-4 text-center">
+        <p class="text-gray-400">© 2025 CryptoPulseAI. All rights reserved.</p>
+    </footer>
+    <script>
+        const chartData = {{ chart_data | tojson }};
+        const colors = ['#4F46E5', '#10B981', '#F59E0B'];
+        let priceChart, rsiChart, volumeChart;
+        function showCoinCharts(coinName) {
+            if (priceChart) priceChart.destroy();
+            if (rsiChart) rsiChart.destroy();
+            if (volumeChart) volumeChart.destroy();
+            priceChart = new Chart(document.getElementById('priceChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.dates,
+                    datasets: [{
+                        label: coinName + ' Price',
+                        data: chartData.prices[coinName] || [],
+                        backgroundColor: colors[0] + '80',
+                        borderColor: colors[0],
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Date', color: '#D1D5DB' },
+                            ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: function(value, index, values) {
+                                    const date = new Date(chartData.dates[index]);
+                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                            }
+                        },
+                        y: { title: { display: true, text: 'Price (USD)', color: '#D1D5DB' } }
+                    },
+                    plugins: { legend: { labels: { color: '#D1D5DB' } } }
+                }
+            });
+            rsiChart = new Chart(document.getElementById('rsiChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.dates,
+                    datasets: [{
+                        label: coinName + ' RSI',
+                        data: chartData.rsi[coinName] || [],
+                        backgroundColor: colors[1] + '80',
+                        borderColor: colors[1],
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Date', color: '#D1D5DB' },
+                            ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: function(value, index, values) {
+                                    const date = new Date(chartData.dates[index]);
+                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                            }
+                        },
+                        y: { 
+                            title: { display: true, text: 'RSI', color: '#D1D5DB' }, 
+                            suggestedMin: 0, 
+                            suggestedMax: 100 
+                        }
+                    },
+                    plugins: { legend: { labels: { color: '#D1D5DB' } } }
+                }
+            });
+            volumeChart = new Chart(document.getElementById('volumeChart'), {
+                type: 'bar',
+                data: {
+                    labels: chartData.dates,
+                    datasets: [{
+                        label: coinName + ' Volume',
+                        data: chartData.volumes[coinName] || [],
+                        backgroundColor: colors[2]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Date', color: '#D1D5DB' },
+                            ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: function(value, index, values) {
+                                    const date = new Date(chartData.dates[index]);
+                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                            }
+                        },
+                        y: { title: { display: true, text: 'Volume (USD)', color: '#D1D5DB' } }
+                    },
+                    plugins: { legend: { labels: { color: '#D1D5DB' } } }
+                }
+            });
+        }
+        showCoinCharts('Bitcoin');
+    </script>
+</body>
+</html>

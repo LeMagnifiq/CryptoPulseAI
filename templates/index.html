@@ -3,21 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoPulseAI</title>
-    <!-- Tailwind CSS CDN -->
+    <title>CryptoPulseAI - Home</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white">
-    <!-- Hero Section -->
-    <section class="min-h-screen flex items-center justify-center">
-        <div class="text-center px-4">
-            <h1 class="text-5xl font-bold mb-4">CryptoPulseAI</h1>
-            <p class="text-xl mb-6">AI-Powered Cryptocurrency Analysis & Predictions</p>
-            <p class="text-lg mb-8">Explore real-time prices, technical indicators, and AI-driven forecasts.</p>
-            <a href="/prices" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                Explore Prices & Predictions
-            </a>
+    <header class="bg-gray-800 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">CryptoPulseAI</h1>
+            <nav>
+                <a href="/prices" class="text-blue-300 hover:text-blue-100 mx-2">Prices</a>
+                <a href="/predictions" class="text-blue-300 hover:text-blue-100 mx-2">Predictions</a>
+            </nav>
         </div>
-    </section>
+    </header>
+    <main class="container mx-auto px-4 py-12 text-center">
+        <h2 class="text-4xl font-bold mb-4">Welcome to CryptoPulseAI</h2>
+        <p class="text-lg mb-6">Your ultimate tool for cryptocurrency price predictions and market analysis.</p>
+        <a href="/predictions" class="inline-block bg-blue-300 text-gray-900 font-semibold py-2 px-4 rounded-lg hover:bg-blue-100">Get Started</a>
+    </main>
+    <footer class="bg-gray-800 py-4 text-center">
+        <p class="text-gray-400">© 2025 CryptoPulseAI. All rights reserved.</p>
+    </footer>
 </body>
 </html>
